@@ -49,12 +49,14 @@ which is nontrivial (traverse is moderately complex to implement for some pairs
 of types), you never want to add new functor types...
 
 So I tried to solve that, as much as I could, with SRTP. And then we had some
-code that [compiled and crashed at runtime]()... the opposite of everything
-I had been striving for. I [found]() that if I updated the rigor of what I was
-doing, I could get the bad code to not compile, even without the F# compiler
-being fixed. However, so much boilerplate was required to get the SRTP stuff
-working, I no longer trusted myself to write it by hand (that had been a dicey
-endeavor before).
+[code](https://github.com/Kazark/fsharp-srtp-broken) that [compiled and crashed
+at runtime](https://github.com/Microsoft/visualfsharp/issues/4924)... the
+opposite of everything I had been striving for.
+I [found](https://github.com/Kazark/fsharp-srtp-broken/tree/feature-fixed) that
+if I updated the rigor of what I was doing, I could get the bad code to not
+compile, even without the F# compiler being fixed. However, so much boilerplate
+was required to get the SRTP stuff working, I no longer trusted myself to write
+it by hand (that had been a dicey endeavor before).
 
 So I started writing a code generator. I thought, this is going from bad to
 worse already, but I can't turn back from the drive towards making my F# code
