@@ -21,8 +21,9 @@ data Method : (Monotype, Monotype) -> Type where
 ||| (S n) is the arity of the type constructor
 data MMTypeCtr : (n : Nat) -> Type where
   Regular : (n: Nat) -> String -> MMTypeCtr n
-  Tuple   : MMTypeCtr n
+  Tuple   : (n : Nat) -> MMTypeCtr n
   Array   : MMTypeCtr Z
+  Appl1   : MMTypeCtr (S n) -> MMTypeCtr n
 
 ||| (S n) is the arity of the typeclass
 ||| The list is the methods that will be used to implement the others. You might
@@ -52,8 +53,18 @@ mapType =
     )
   )
 
+mapImpl : String -> Method Main.mapType
+mapImpl = Method' mapType
+
 functorTC : Typeclass Z [Main.mapType]
 functorTC = TyCl "Functor"
 
 functorInstances : List (Instance Main.functorTC)
-functorInstances = map Inst [(Regular Z "Either", [Method' mapType "Either.rmap"])]
+functorInstances = map Inst
+  [ (Appl1 (Regular 1 "Either"), [mapImpl "Either.rmap"])
+  , (Appl1 (Regular 1 "Result"), [mapImpl "Result.mapError"])
+  , (Regular Z "list", [mapImpl "List.map"])
+  , (Regular Z "option", [mapImpl "Option.map"])
+  , (Array, [mapImpl "Array.map"])
+  , (Appl1 (Tuple 1), [mapImpl "Pair.map"])
+  ]
