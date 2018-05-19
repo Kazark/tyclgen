@@ -14,8 +14,8 @@ mutual
     | FuncType (Monotype, Monotype)
     | NullaryTypeAppl (UnaryTypeOp, Monotype)
 
-data MethodImpl = MethodImpl' String
-data Method = Method' ((Monotype, Monotype), MethodImpl)
+data Method : (Monotype, Monotype) -> Type where
+  Method' : (msig : (Monotype, Monotype)) -> String -> Method msig
 
 ||| Monomorphic type constructors
 ||| (S n) is the arity of the type constructor
@@ -25,16 +25,18 @@ data MMTypeCtr : (n : Nat) -> Type where
   Array   : MMTypeCtr Z
 
 ||| (S n) is the arity of the typeclass
-record Typeclass (n : Nat) where
-  constructor TyCl
-  name : String
-  ||| These are the methods that will be used to implement the others. You
-  ||| might also call them abstract or pure virtual in OO terminology.
-  abstractMethods : List (Monotype, Monotype)
+||| The list is the methods that will be used to implement the others. You might
+||| also call them abstract or pure virtual in object-oriented terminology.
+data Typeclass : Nat -> List (Monotype, Monotype) -> Type where
+  TyCl : String -> Typeclass n l
+
+data Methods : List (Monotype, Monotype) -> Type where
+  Nil  : Methods []
+  (::) : Method msig -> Methods sigs -> Methods (msig :: sigs)
 
 ||| TODO Need number of methods to match number of primitive methods in typeclass, and their signatures
-data Instance : (tc : Typeclass n) -> Type where
-  Inst : (MMTypeCtr n, List Method) -> Instance tc
+data Instance : (tc : Typeclass n l) -> Type where
+  Inst : (MMTypeCtr n, Methods l) -> Instance tc
 
 numArgs : Monotype -> Nat
 numArgs (Term _) = 0
@@ -50,8 +52,8 @@ mapType =
     )
   )
 
-functorTC : Typeclass Z
-functorTC = TyCl "Functor" [mapType]
+functorTC : Typeclass Z [Main.mapType]
+functorTC = TyCl "Functor"
 
 functorInstances : List (Instance Main.functorTC)
-functorInstances = map Inst [(Regular Z "Either", [Method' (mapType, MethodImpl' "Either.rmap")])]
+functorInstances = map Inst [(Regular Z "Either", [Method' mapType "Either.rmap"])]
