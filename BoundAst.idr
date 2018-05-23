@@ -1,11 +1,13 @@
 module BoundAst
 
 %default total
+%access public export
 
 mutual
   ||| An unary type operator is a type of kind * -> *
   data UnaryTypeOp
-    = TypeCtr String
+    = TypeclassCtr
+    --| TypeCtr String
     | NAryTypeAppl UnaryTypeOp Monotype
 
   ||| A monotype is a type of kind *
@@ -44,26 +46,3 @@ numArgs (Term _) = 0
 numArgs (NullaryTypeAppl _ _) = 0
 numArgs (FuncType _ f) = S (numArgs f)
 
-MapType : (Monotype, Monotype)
-MapType =
-  ( FuncType (Term "a") (Term "b")
-  , FuncType
-      (NullaryTypeAppl (TypeCtr "f") (Term "a"))
-      (NullaryTypeAppl (TypeCtr "f") (Term "b"))
-  )
-
-mapImpl : String -> Method MapType
-mapImpl = Method' _
-
-FunctorTC : Typeclass Z [MapType]
-FunctorTC = TyCl "Functor"
-
-functorInstances : List (Instance FunctorTC)
-functorInstances = map Inst
-  [ (Appl1 (Regular 1 "Either"), [mapImpl "Either.rmap"])
-  , (Appl1 (Regular 1 "Result"), [mapImpl "Result.mapError"])
-  , (Regular Z "list", [mapImpl "List.map"])
-  , (Regular Z "option", [mapImpl "Option.map"])
-  , (Array, [mapImpl "Array.map"])
-  , (Appl1 (Tuple 1), [mapImpl "Pair.map"])
-  ]
