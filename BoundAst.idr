@@ -14,7 +14,7 @@ mutual
   data Monotype : Type where
     Term : String -> Monotype
     FuncType : Monotype -> Monotype -> Monotype
-    NullaryTypeAppl : UnaryTypeOp -> Monotype -> Monotype
+    TypeFullyApplied : UnaryTypeOp -> Monotype -> Monotype
 
 data Method : (Monotype, Monotype) -> Type where
   Method' : (msig : (Monotype, Monotype)) -> String -> Method msig
@@ -40,9 +40,4 @@ data Methods : List (Monotype, Monotype) -> Type where
 ||| TODO Need number of methods to match number of primitive methods in typeclass, and their signatures
 data Instance : (tc : Typeclass n l) -> Type where
   Inst : (MMTypeCtr n, Methods l) -> Instance tc
-
-numArgs : Monotype -> Nat
-numArgs (Term _) = 0
-numArgs (NullaryTypeAppl _ _) = 0
-numArgs (FuncType _ f) = S (numArgs f)
 

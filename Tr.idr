@@ -1,6 +1,8 @@
 module Tr
 
 import BoundAst
+import Data.Fin
+import Data.Vect
 
 %default total
 
@@ -24,9 +26,9 @@ import BoundAst
 -- Ultimately, both are just getting around the fact that you can't
 -- "peek inside" a statically resolved type parameter in F#.
 
-data HKTPred
-  = SameTypeCtr
-  | IsParameterizedOver
+--data HKTPred
+--  = SameTypeCtr
+--  | IsParameterizedOver
 
 -- If a method's type uses TypeAppl, it will need to make sure to include ^hkt
 -- in the generated F# code, for injecting HKTPreds.
@@ -39,11 +41,40 @@ data HKTPred
 -- The generated code will always need a ^tc argument for every time class involved.
 -- The generated code will need a SRTP for every monotype and typeappl in the equation.
 
-hktPredsAboutMonotype : Monotype -> List (List String)
-hktPredsAboutMonotype (Term _) = []
-hktPredsAboutMonotype (FuncType x y) = hktPredsAboutMonotype x ++ hktPredsAboutMonotype y
-hktPredsAboutMonotype (NullaryTypeAppl TypeclassCtr tcc) = hktPredsAboutMonotype tcc
-hktPredsAboutMonotype (NullaryTypeAppl (NAryTypeAppl x z) y) = ?truthsAbout_rhs_2
+||| Monotype reworked to be based on n-arry (uncurried) type applications and
+||| function types rather than curried
+data Monotype'
+  = Term' String
+  | FuncType' Monotype' (Monotype', List Monotype')
+  | NAryTypeAppl' (List Monotype')
 
-tcRequiresPreds : Typeclass n msigs -> List HKTPred
-tcRequiresPreds (TyCl _) = ?deduceHKTPred_rhs_1
+cons : a -> (a, List a) -> (a, List a)
+cons x (x', xs) = (x, x' :: xs)
+
+mutual -- Total this way, fascinatingly enough
+  unwindUnaryTypeOp : UnaryTypeOp -> List Monotype'
+  unwindUnaryTypeOp TypeclassCtr = []
+  unwindUnaryTypeOp (NAryTypeAppl uto mt) = breakIntoSubExprs mt :: unwindUnaryTypeOp uto
+
+  clingShangHoong : Monotype -> (Monotype', List Monotype')
+  clingShangHoong (Term x) = (Term' x, [])
+  clingShangHoong (FuncType x y) = cons (breakIntoSubExprs x) (clingShangHoong y)
+  clingShangHoong (TypeFullyApplied x y) = (breakIntoSubExprs $ TypeFullyApplied x y, [])
+
+  breakIntoSubExprs : Monotype -> Monotype'
+  breakIntoSubExprs (Term x) = Term' x
+  breakIntoSubExprs (FuncType x y) = FuncType' (breakIntoSubExprs x) $ clingShangHoong y
+  breakIntoSubExprs (TypeFullyApplied uto mt) =
+    NAryTypeAppl' $ reverse $ breakIntoSubExprs mt :: unwindUnaryTypeOp uto
+
+data FSILTF : Nat -> Type where
+  Term : Fin n -> FSILTF n
+  Func : Fin n -> Fin n -> FSILTF n
+
+data FSILType : (n : Nat) -> Type where
+  FSILTy : FSILTF n -> Vect n Monotype' -> FSILType n
+
+cardinality : Monotype' -> Nat
+cardinality (Term' x) = ?cardinality_rhs_1
+cardinality (FuncType' x y) = ?cardinality_rhs_2
+cardinality (NAryTypeAppl' xs) = ?cardinality_rhs_3

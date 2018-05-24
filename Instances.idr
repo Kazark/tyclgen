@@ -8,8 +8,8 @@ MapType : (Monotype, Monotype)
 MapType =
   ( FuncType (Term "a") (Term "b")
   , FuncType
-    (NullaryTypeAppl TypeclassCtr (Term "a"))
-    (NullaryTypeAppl TypeclassCtr (Term "b"))
+    (TypeFullyApplied TypeclassCtr (Term "a"))
+    (TypeFullyApplied TypeclassCtr (Term "b"))
   )
 
 mapImpl : String -> Method MapType
@@ -30,26 +30,26 @@ functorInstances = map Inst
 
 BindType : (Monotype, Monotype)
 BindType =
-  ( FuncType (Term "a") (NullaryTypeAppl TypeclassCtr (Term "b"))
+  ( FuncType (Term "a") (TypeFullyApplied TypeclassCtr (Term "b"))
   , FuncType
-    (NullaryTypeAppl TypeclassCtr (Term "a"))
-    (NullaryTypeAppl TypeclassCtr (Term "b"))
+    (TypeFullyApplied TypeclassCtr (Term "a"))
+    (TypeFullyApplied TypeclassCtr (Term "b"))
   )
 
 ApplyType : (Monotype, Monotype)
 ApplyType =
-  ( NullaryTypeAppl TypeclassCtr (FuncType (Term "a") (Term "b"))
+  ( TypeFullyApplied TypeclassCtr (FuncType (Term "a") (Term "b"))
   , FuncType
-    (NullaryTypeAppl TypeclassCtr (Term "a"))
-    (NullaryTypeAppl TypeclassCtr (Term "b"))
+    (TypeFullyApplied TypeclassCtr (Term "a"))
+    (TypeFullyApplied TypeclassCtr (Term "b"))
   )
 
 --TraverseType : (Monotype, Monotype)
 --TraverseType =
---  ( FuncType (Term "a") (NullaryTypeAppl (TypeCtr "m") (Term "b"))
+--  ( FuncType (Term "a") (TypeFullyApplied (TypeCtr "m") (Term "b"))
 --  , FuncType
---    (NullaryTypeAppl TypeclassCtr (Term "a"))
---    (NullaryTypeAppl (TypeCtr "m") (NullaryTypeAppl TypeclassCtr (Term "b")))
+--    (TypeFullyApplied TypeclassCtr (Term "a"))
+--    (TypeFullyApplied (TypeCtr "m") (NullaryTypeAppl TypeclassCtr (Term "b")))
 --  )
 
 BimapType : (Monotype, Monotype)
@@ -58,8 +58,8 @@ BimapType =
   , FuncType
     (FuncType (Term "c") (Term "d"))
     (FuncType
-      (NullaryTypeAppl (NAryTypeAppl TypeclassCtr (Term "a")) (Term "c"))
-      (NullaryTypeAppl (NAryTypeAppl TypeclassCtr (Term "b")) (Term "d"))
+      (TypeFullyApplied (NAryTypeAppl TypeclassCtr (Term "a")) (Term "c"))
+      (TypeFullyApplied (NAryTypeAppl TypeclassCtr (Term "b")) (Term "d"))
     )
   )
 
@@ -71,8 +71,8 @@ TrimapType =
     (FuncType
         (FuncType (Term "e") (Term "f"))
         (FuncType
-            (NullaryTypeAppl (NAryTypeAppl (NAryTypeAppl TypeclassCtr (Term "a")) (Term "c")) (Term "e"))
-            (NullaryTypeAppl (NAryTypeAppl (NAryTypeAppl TypeclassCtr (Term "b")) (Term "d")) (Term "f"))
+            (TypeFullyApplied (NAryTypeAppl (NAryTypeAppl TypeclassCtr (Term "a")) (Term "c")) (Term "e"))
+            (TypeFullyApplied (NAryTypeAppl (NAryTypeAppl TypeclassCtr (Term "b")) (Term "d")) (Term "f"))
         )
     )
   )
