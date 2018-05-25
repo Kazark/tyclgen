@@ -3,6 +3,7 @@ module Tr
 import BoundAst
 import Data.Fin
 import Data.Vect
+import Instances
 
 %default total
 
@@ -71,18 +72,30 @@ genSRTPVar : Nat -> String
 genSRTPVar k =
   pack $ Stream.take (divNatNZ k 26 SIsNotZ + 1) $ repeat $ chr $ cast $ modNatNZ k 26 SIsNotZ + 97
 
+data LBranch = LeftBranch
+
+maybeParenthesize : Maybe LBranch -> String -> String
+maybeParenthesize branch s =
+  foldl (\s => \_ => "(" ++ s ++ ")") s branch
+
 mutual
   iAmIgnorant' : Nat -> UnaryTypeOp -> (Nat, String)
   iAmIgnorant' k TypeclassCtr = (S k, genSRTPVar k)
   iAmIgnorant' k (NAryTypeAppl x y) = (S k, genSRTPVar k)
 
-  iAmIgnorant : Nat -> Monotype -> (Nat, String)
-  iAmIgnorant k (Term _) = (S k, genSRTPVar k)
-  iAmIgnorant k (FuncType x y) =
-    let (k0, s0) = iAmIgnorant k x
-        (k1, s1) = iAmIgnorant k0 y
-    in (k1, "(" ++ s0 ++ " -> " ++ s1 ++ ")")
-  iAmIgnorant k (TypeFullyApplied x y) = (S k, genSRTPVar k)
+  iAmIgnorant : Nat -> Maybe LBranch -> Monotype -> (Nat, String)
+  iAmIgnorant k _ (Term _) = (S k, genSRTPVar k)
+  iAmIgnorant k branch (FuncType x y) =
+    let (k0, s0) = iAmIgnorant k (Just LeftBranch) x
+        (k1, s1) = iAmIgnorant k0 Nothing y
+    in (k1, maybeParenthesize branch $ s0 ++ " -> " ++ s1)
+  iAmIgnorant k _ (TypeFullyApplied x y) = (S k, genSRTPVar k)
+
+halp : Monotype -> (Nat, String)
+halp = iAmIgnorant Z Nothing
+
+test : String
+test = snd $ halp $ uncurry FuncType TrimapType
 
 data FSILTF : Nat -> Type where
   Term : Fin n -> FSILTF n

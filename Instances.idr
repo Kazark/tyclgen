@@ -3,6 +3,7 @@ module Instances
 import BoundAst
 
 %default total
+%access public export
 
 MapType : (Monotype, Monotype)
 MapType =
