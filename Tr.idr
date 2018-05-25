@@ -71,11 +71,18 @@ genSRTPVar : Nat -> String
 genSRTPVar k =
   pack $ Stream.take (divNatNZ k 26 SIsNotZ + 1) $ repeat $ chr $ cast $ modNatNZ k 26 SIsNotZ + 97
 
-iAmIgnorant : Nat -> List Monotype' -> String
-iAmIgnorant k [] = ""
-iAmIgnorant k ((Term' x) :: xs) = ?iAmIgnorant_rhs_1
-iAmIgnorant k ((FuncType' x y) :: xs) = ?iAmIgnorant_rhs_3
-iAmIgnorant k ((NAryTypeAppl' ys) :: xs) = ?iAmIgnorant_rhs_4
+mutual
+  iAmIgnorant' : Nat -> UnaryTypeOp -> (Nat, String)
+  iAmIgnorant' k TypeclassCtr = (S k, genSRTPVar k)
+  iAmIgnorant' k (NAryTypeAppl x y) = (S k, genSRTPVar k)
+
+  iAmIgnorant : Nat -> Monotype -> (Nat, String)
+  iAmIgnorant k (Term _) = (S k, genSRTPVar k)
+  iAmIgnorant k (FuncType x y) =
+    let (k0, s0) = iAmIgnorant k x
+        (k1, s1) = iAmIgnorant k0 y
+    in (k1, "(" ++ s0 ++ " -> " ++ s1 ++ ")")
+  iAmIgnorant k (TypeFullyApplied x y) = (S k, genSRTPVar k)
 
 data FSILTF : Nat -> Type where
   Term : Fin n -> FSILTF n
