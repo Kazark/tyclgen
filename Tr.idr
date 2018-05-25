@@ -67,6 +67,16 @@ mutual -- Total this way, fascinatingly enough
   breakIntoSubExprs (TypeFullyApplied uto mt) =
     NAryTypeAppl' $ reverse $ breakIntoSubExprs mt :: unwindUnaryTypeOp uto
 
+genSRTPVar : Nat -> String
+genSRTPVar k =
+  pack $ Stream.take (divNatNZ k 26 SIsNotZ + 1) $ repeat $ chr $ cast $ modNatNZ k 26 SIsNotZ + 97
+
+iAmIgnorant : Nat -> List Monotype' -> String
+iAmIgnorant k [] = ""
+iAmIgnorant k ((Term' x) :: xs) = ?iAmIgnorant_rhs_1
+iAmIgnorant k ((FuncType' x y) :: xs) = ?iAmIgnorant_rhs_3
+iAmIgnorant k ((NAryTypeAppl' ys) :: xs) = ?iAmIgnorant_rhs_4
+
 data FSILTF : Nat -> Type where
   Term : Fin n -> FSILTF n
   Func : Fin n -> Fin n -> FSILTF n
