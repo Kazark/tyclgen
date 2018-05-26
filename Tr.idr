@@ -68,34 +68,43 @@ mutual -- Total this way, fascinatingly enough
   breakIntoSubExprs (TypeFullyApplied uto mt) =
     NAryTypeAppl' $ reverse $ breakIntoSubExprs mt :: unwindUnaryTypeOp uto
 
-genSRTPVar : Nat -> String
-genSRTPVar k =
+genVar : Nat -> String
+genVar k =
   pack $ Stream.take (divNatNZ k 26 SIsNotZ + 1) $ repeat $ chr $ cast $ modNatNZ k 26 SIsNotZ + 97
+
+genSRTPVar : Nat -> String
+genSRTPVar k = "^" ++ genVar k
 
 data LBranch = LeftBranch
 
+parenthesize : String -> String
+parenthesize s = "(" ++ s ++ ")"
+
 maybeParenthesize : Maybe LBranch -> String -> String
-maybeParenthesize branch s =
-  foldl (\s => \_ => "(" ++ s ++ ")") s branch
+maybeParenthesize = flip $ foldl $ flip $ \_ => parenthesize
 
-mutual
-  iAmIgnorant' : Nat -> UnaryTypeOp -> (Nat, String)
-  iAmIgnorant' k TypeclassCtr = (S k, genSRTPVar k)
-  iAmIgnorant' k (NAryTypeAppl x y) = (S k, genSRTPVar k)
+parenthesizeVar : Nat -> String -> (Nat, String)
+parenthesizeVar k s =
+  (S k, parenthesize $ genVar k ++ " : " ++ s)
 
-  iAmIgnorant : Nat -> Maybe LBranch -> Monotype -> (Nat, String)
-  iAmIgnorant k _ (Term _) = (S k, genSRTPVar k)
-  iAmIgnorant k branch (FuncType x y) =
-    let (k0, s0) = iAmIgnorant k (Just LeftBranch) x
-        (k1, s1) = iAmIgnorant k0 Nothing y
-    in (k1, maybeParenthesize branch $ s0 ++ " -> " ++ s1)
-  iAmIgnorant k _ (TypeFullyApplied x y) = (S k, genSRTPVar k)
+iAmIgnorant : Nat -> Maybe LBranch -> Monotype -> (Nat, String)
+iAmIgnorant k _ (Term _) = (S k, genSRTPVar k)
+iAmIgnorant k branch (FuncType x y) =
+  let (k0, s0) = iAmIgnorant k (Just LeftBranch) x
+      (k1, s1) = iAmIgnorant k0 Nothing y
+  in (k1, maybeParenthesize branch $ s0 ++ " -> " ++ s1)
+iAmIgnorant k _ (TypeFullyApplied x y) = (S k, genSRTPVar k)
 
-halp : Monotype -> (Nat, String)
-halp = iAmIgnorant Z Nothing
+halp : Nat -> Nat -> Maybe LBranch -> Monotype -> String
+halp k v _ (FuncType x y) =
+  let (k0, s0) = iAmIgnorant k Nothing x
+      (v0, s1) = parenthesizeVar v s0
+  in s1 ++ " " ++ halp k0 v0 Nothing y
+halp k v Nothing m = ": " ++ (snd $ iAmIgnorant k Nothing m)
+halp k v (Just x) m = snd $ parenthesizeVar v $ snd $ iAmIgnorant k Nothing m
 
 test : String
-test = snd $ halp $ uncurry FuncType TrimapType
+test = halp Z Z Nothing $ uncurry FuncType TrimapType
 
 data FSILTF : Nat -> Type where
   Term : Fin n -> FSILTF n
@@ -104,7 +113,7 @@ data FSILTF : Nat -> Type where
 data FSILType : (n : Nat) -> Type where
   FSILTy : FSILTF n -> Vect n Monotype' -> FSILType n
 
-cardinality : Monotype' -> Nat
-cardinality (Term' x) = ?cardinality_rhs_1
-cardinality (FuncType' x y) = ?cardinality_rhs_2
-cardinality (NAryTypeAppl' xs) = ?cardinality_rhs_3
+--cardinality : Monotype' -> Nat
+--cardinality (Term' x) = ?cardinality_rhs_1
+--cardinality (FuncType' x y) = ?cardinality_rhs_2
+--cardinality (NAryTypeAppl' xs) = ?cardinality_rhs_3
