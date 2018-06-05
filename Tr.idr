@@ -4,6 +4,7 @@ import BoundAst
 import Data.Fin
 import Data.Vect
 import Instances
+import CodeGen
 
 %default total
 
@@ -106,14 +107,74 @@ halp k v (Just x) m = snd $ parenthesizeVar v $ snd $ iAmIgnorant k Nothing m
 test : String
 test = halp Z Z Nothing $ uncurry FuncType TrimapType
 
-data FSILTF : Nat -> Type where
-  Term : Fin n -> FSILTF n
-  Func : Fin n -> Fin n -> FSILTF n
+data Sep = Comma | Star
 
-data FSILType : (n : Nat) -> Type where
-  FSILTy : FSILTF n -> Vect n Monotype' -> FSILType n
+record FSGenericType where
+  constructor FSGenType
+  pre : String
+  sep : Sep
+  targs : List String
+  post : String
 
---cardinality : Monotype' -> Nat
---cardinality (Term' x) = ?cardinality_rhs_1
---cardinality (FuncType' x y) = ?cardinality_rhs_2
---cardinality (NAryTypeAppl' xs) = ?cardinality_rhs_3
+consTArg : String -> FSGenericType -> FSGenericType
+consTArg targ (FSGenType pre sep targs post) = (FSGenType pre sep (targ :: targs) post)
+
+data SameTypeCtr
+  = SameTypeCtr' FSGenericType FSGenericType
+
+doubleConsTArg : String -> SameTypeCtr -> SameTypeCtr
+doubleConsTArg targ (SameTypeCtr' x y) = (SameTypeCtr' (consTArg targ x) (consTArg targ y))
+
+genNSRTPVarsFrom : Nat -> Nat -> List String
+genNSRTPVarsFrom n k = toList $ take n $ map genSRTPVar $ iterate S k
+
+FSTupleType : List String -> FSGenericType
+FSTupleType targs = FSGenType "( " Star targs ")"
+
+FSRegularType : String -> List String -> FSGenericType
+FSRegularType name targs = FSGenType (name ++ "< ") Comma targs ">"
+
+FSArrayType : String -> FSGenericType
+FSArrayType x = FSGenType "" Comma [x] "[]"
+
+pairedGenericTArgs : Nat -> Nat -> (List String, List String)
+pairedGenericTArgs n k =
+  (genNSRTPVarsFrom (minus n k) k, genNSRTPVarsFrom (minus n k) (k + n))
+
+sameTypeCtr_ : Nat -> MMTypeCtr n -> SameTypeCtr
+sameTypeCtr_ k (Regular n x) =
+  let (targs0, targs1) = pairedGenericTArgs (n + 1) k
+  in SameTypeCtr' (FSRegularType x targs0) (FSRegularType x targs1)
+sameTypeCtr_ k (Tuple n) =
+  let (targs0, targs1) = pairedGenericTArgs (n + 2) k
+  in SameTypeCtr' (FSTupleType targs0) (FSTupleType targs1)
+sameTypeCtr_ _ Array = SameTypeCtr' (FSArrayType "^a") (FSArrayType "^b")
+sameTypeCtr_ k (Appl1 x) = doubleConsTArg (genSRTPVar k) $ sameTypeCtr_ (S k) x
+
+TODO : String
+TODO = genSMI $ sameTypeCtrToSMI $ sameTypeCtr $ Appl1 $ Appl1 $ Tuple 2
+-- BAD result:
+--  "  static member inline SameTypeCtr (_ : ( ^a * ^b * ^c * ^d), _ : ( ^a * ^b * ^g * ^h)) : unit = ()" : String
+-- Without breaking
+-- genSMI $ sameTypeCtrToSMI $ sameTypeCtr $ Tuple Z
+-- Which gives the good result
+--  "  static member inline SameTypeCtr (_ : ( ^a * ^b), _ : ( ^c * ^d)) : unit = ()" : String
+-- Also need to start thinking about: A, B, etc...
+
+sameTypeCtr : MMTypeCtr n -> SameTypeCtr
+sameTypeCtr = sameTypeCtr_ Z
+
+genSep : Sep -> String
+genSep Comma = ", "
+genSep Star = " * "
+
+concatWith : Sep -> List String -> String
+concatWith sep = concat . intersperse (genSep sep)
+
+genFsGenType : FSGenericType -> String
+genFsGenType (FSGenType pre sep targs post) =
+  pre ++ concatWith sep targs ++ post
+
+sameTypeCtrToSMI : SameTypeCtr -> SMI
+sameTypeCtrToSMI (SameTypeCtr' x y) =
+  StatMethInli "SameTypeCtr" ["_ : " ++ genFsGenType x, "_ : " ++ genFsGenType y] "unit" "()"

@@ -26,7 +26,7 @@ functorInstances = map Inst
   , (Regular Z "list", [mapImpl "List.map"])
   , (Regular Z "option", [mapImpl "Option.map"])
   , (Array, [mapImpl "Array.map"])
-  , (Appl1 (Tuple 1), [mapImpl "Pair.map"])
+  , (Appl1 (Tuple Z), [mapImpl "Pair.map"])
   ]
 
 BindType : (Monotype, Monotype)

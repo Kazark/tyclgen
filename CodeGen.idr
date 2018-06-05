@@ -1,10 +1,11 @@
 module CodeGen
 
 %default total
+%access public export
 
 ||| Stands for "Static Method Inline"
 record SMI where
-  constructor StMeIn
+  constructor StatMethInli
   name : String
   args : List String
   retT : String
@@ -12,7 +13,7 @@ record SMI where
 
 genSMI : SMI -> String
 genSMI x =
-  let argz = concat $ intersperse "," $ args x
+  let argz = concat $ intersperse ", " $ args x
   in concat ["  static member inline ", name x, " (", argz, ") : ", retT x, " = ", impl x]
 
 data AutoOpen = AutoOpen'

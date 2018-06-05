@@ -20,10 +20,11 @@ data Method : (Monotype, Monotype) -> Type where
   Method' : (msig : (Monotype, Monotype)) -> String -> Method msig
 
 ||| Monomorphic type constructors
-||| (S n) is the arity of the type constructor
+||| (S n) is the arity of the type constructor, except for tuple, in which case
+||| it is S (S n)
 data MMTypeCtr : (n : Nat) -> Type where
   Regular : (n: Nat) -> String -> MMTypeCtr n
-  Tuple   : (n : Nat) -> MMTypeCtr n
+  Tuple   : (n : Nat) -> MMTypeCtr (S n)
   Array   : MMTypeCtr Z
   Appl1   : MMTypeCtr (S n) -> MMTypeCtr n
 
